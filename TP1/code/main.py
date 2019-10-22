@@ -45,10 +45,6 @@ def main():
     
     elif options.algo == "seuil":
         # Exécuter l'algorithme Diviser pour régner
-        time = execute_DpR(sorted_points_x, sorted_points_y, 1, options.smallest)
-
-    elif options.algo == "seuil4":
-        # Exécuter l'algorithme Diviser pour régner
         time = execute_DpR(sorted_points_x, sorted_points_y, 4, options.smallest)
 
     if options.time:

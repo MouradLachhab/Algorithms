@@ -14,5 +14,5 @@ g.add_legend()
 
 
 
-plt.savefig('test_puissance')
+plt.savefig('test_puissance' + '_' + sys.argv[2])
 
