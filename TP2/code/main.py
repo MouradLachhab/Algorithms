@@ -8,6 +8,7 @@ import csv
 import argparse
 from glouton import execute_glouton
 from progdyn import execute_prog_dyn
+from backtracking import execute_backtrack
 
 def getOptions(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(description="Parses command.")
@@ -40,11 +41,9 @@ def main():
         n += 1
         time = execute_prog_dyn(n, cuts, prices, options.price, options.showCuts)
 
-
-
-    # elif options.algo == "backtrack":
+    elif options.algo == "backtrack":
         # Exécuter l'algorithme avec retour en arriere
-
+        time = execute_backtrack(n, cuts, prices, options.price, options.showCuts)
 
     if options.time:
         print(time)
