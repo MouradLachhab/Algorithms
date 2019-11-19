@@ -1,4 +1,5 @@
 import time
+import sys
 
 def backtrack(n, cuts, prices, showCuts):
     pathChosen = []
@@ -15,6 +16,7 @@ def backtrack(n, cuts, prices, showCuts):
 
 
 def execute_backtrack(n, cuts, prices, showTotal, showCuts):
+    sys.setrecursionlimit(10**5)
     start = time.time()
     total, path = backtrack(n, cuts, prices, showCuts)
     end = time.time()
