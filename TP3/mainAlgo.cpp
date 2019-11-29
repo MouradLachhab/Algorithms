@@ -64,9 +64,8 @@ bool improve(list<Deck*> decks_curr){
         decks_temp[i].setValue();
         decks_temp[i-1].setValue();
 
-        getBestMinDeck
-        
-        if (decks_temp.value > decks_curr.value){
+        if (decks_temp[i].value + decks_temp[i-1].value >
+            decks_curr[i].value + decks_curr[i-1].value ){
             decks_curr = decks_temp;
             return true;
         }
