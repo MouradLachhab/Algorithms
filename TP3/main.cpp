@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
-#include <bits/stdc++.h> 
+#include <algorithm>
 #include <time.h>
 
 using namespace std;
@@ -138,6 +138,54 @@ vector<Deck*> randomize(vector<Card*> cards, int nbDecks)
     return decks;
 }
 
+vector<Deck*> improvedRandomizer(vector<Card*> cards, int nbDecks)
+{
+	int nbCardsPerDeck = cards.size() / nbDecks;
+	vector<Deck*> decks(nbDecks);
+	vector<int> availableCards(cards.size());
+
+	for (int i = 0; i < cards.size(); ++i)
+	{
+		availableCards[i] = i;
+	}
+
+	for (int i = 0; i < nbDecks; ++i)
+	{
+		decks[i] = new Deck();
+		int index = rand() % availableCards.size();
+		decks[i]->cards.push_back(cards[availableCards[index]]);
+		availableCards.erase(availableCards.begin() + index);
+	}
+
+	bool done = false;
+	int tooManyLoops = 0;
+	while (!done)
+	{
+		done = true;
+
+		for (int i = 0; i < nbDecks; ++i)
+		{
+			if (decks[i]->cards.size() < nbCardsPerDeck)
+			{
+				done = false;
+				int index = rand() % availableCards.size();
+
+				if (decks[i]->cards[0]->synergy[availableCards[index]] > 0 || tooManyLoops > nbCardsPerDeck)
+				{
+					decks[i]->cards.push_back(cards[availableCards[index]]);
+					availableCards.erase(availableCards.begin() + index);
+				}
+				else
+				{
+					tooManyLoops++;
+				}
+			}
+		}
+	}
+
+	return decks;
+}
+
 vector<Card*> createCards(vector<int> cardValues, vector<vector<int>> synergies)
 {
     vector<Card*> cards(cardValues.size());
@@ -153,6 +201,17 @@ vector<Card*> createCards(vector<int> cardValues, vector<vector<int>> synergies)
     return cards;
 }
 
+int getMinValue(vector<Deck*> decks)
+{
+	int  min = 99999999;
+	for (Deck* deck : decks)
+	{
+		if (deck->value < min)
+			min = deck->value;
+	}
+
+	return min;
+}
 
 int main(int argc, char **argv)
 {
@@ -176,7 +235,18 @@ int main(int argc, char **argv)
     }
 
     int nbCards, nbDecks;
+
+	// TODO: Remove path
+	path = "C:/Users/MMoumouton/source/repos/Project2/Debug/exemplaires/MTG_10_10";
+
     ifstream infile(path);
+
+	if (!infile.is_open())
+	{
+		cout << "Failed to open file";
+		return 0;
+	}
+
     string line;
 
     // Read the number of cards per deck
@@ -209,25 +279,27 @@ int main(int argc, char **argv)
     vector<Card*> cards = createCards(cardValues, synergies);
     srand(time(NULL));
 
-    decks_curr = randomize(cards, nbDecks);
-    best_deck = decks_curr;
+    decks_curr = improvedRandomizer(cards, nbDecks);
+	int current_min = -9999;
     
     for(Deck* deck : decks_curr)
         deck->setValue();
 
     while(1)
     {
-        bool IsBetter = improve(decks_curr);
+		decks_curr = improvedRandomizer(cards, nbDecks);
 
-        if(!IsBetter)
-        {
-            best_deck = getBestMinDeck(best_deck, decks_curr);
-            decks_curr = randomize(cards, nbDecks);
-        }
-        else
-        {
-            cout << "Found Better Deck" << endl;
-        }
+		for (Deck* deck : decks_curr)
+			deck->setValue();
+
+		int newMin = getMinValue(decks_curr);
+
+		if (current_min < newMin)
+		{ 
+			cout << "New min: " << newMin << endl;
+			current_min = newMin;
+			best_deck = decks_curr;
+		}
         
     }
 
