@@ -16,13 +16,15 @@ struct Card
     int value;
     vector<int> synergy;
     int value_with_synergy; 
-
-    bool operator < (const Card& second) const
-    {
-        return value_with_synergy < second.value_with_synergy;
-    }
 };
 
+
+bool compareCard(Card* first, Card* second) {
+	if (first->value_with_synergy > second->value_with_synergy)
+		return true;
+	else
+		return false;
+}
 struct Deck
 {
     vector<Card*> cards;
@@ -48,15 +50,16 @@ struct Deck
         }
         
         value = value_deck;
-        sort(cards.begin(), cards.end());
-    }
-
-    bool operator < (const Deck& second) const
-    {
-        return value < second.value;
+        sort(cards.begin(), cards.end(),compareCard);
     }
 };
 
+bool compareDeck(Deck* first, Deck* second) {
+	if (first->value > second->value)
+		return true;
+	else
+		return false;
+}
 struct Permutation
 {
     Card* cards[2];
@@ -72,25 +75,32 @@ struct Permutation
 bool improve(vector<Deck*> decks_curr)
 {
     Deck* worst_deck = decks_curr.back();
+	int deck_size = worst_deck->cards.size();
 
-    for(int i = worst_deck->cards.size() - 1; i > worst_deck->cards.size()/2; --i)
+    for(int i = deck_size - 1; i > deck_size /2; --i)
     {
     	Card* card1 = worst_deck->cards[i];
 
   		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
   		{
-        Card* card2 = decks_curr[j]->cards.front();
+			for (int k = 0; k <deck_size ; ++k)
+			{
+				Card* card2 = decks_curr[j]->cards[k];
 
-        int max_value = worst_deck->value + decks_curr[j]->value;
-        swap(card1, card2);
+				int max_value = worst_deck->value + decks_curr[j]->value;
+				swap(card1, card2);
 
-        worst_deck->setValue();
-		decks_curr[j]->setValue();
+				worst_deck->setValue();
+				decks_curr[j]->setValue();
 
-        if (worst_deck->value + decks_curr[j]->value > max_value )
-            return true;
-        else
-        	swap(card2, card1);
+				if (worst_deck->value + decks_curr[j]->value > max_value)
+					return true;
+
+				swap(card2, card1);
+				worst_deck->setValue();
+				decks_curr[j]->setValue();
+			}
+       
         }
     }
     return false;
@@ -98,10 +108,10 @@ bool improve(vector<Deck*> decks_curr)
 
 vector<Deck*> getBestMinDeck(vector<Deck*> decks1, vector<Deck*> decks2)
 {
-    sort(decks1.begin(), decks1.end());
-    sort(decks2.begin(), decks2.end());
+    sort(decks1.begin(), decks1.end(),compareDeck);
+    sort(decks2.begin(), decks2.end(),compareDeck);
 
-    if(decks1.back()->value > decks2.back()->value)
+    if(decks1.back()->value >= decks2.back()->value)
         return decks1;
 
     return decks2;
@@ -216,15 +226,18 @@ int main(int argc, char **argv)
     {
         bool IsBetter = improve(decks_curr);
 
-        if(!IsBetter)
-        {
-            best_deck = getBestMinDeck(best_deck, decks_curr);
-            decks_curr = randomize(cards, nbDecks);
-        }
-        else
-        {
-            cout << "Found Better Deck" << endl;
-        }
+		if (!IsBetter)
+		{
+			best_deck = getBestMinDeck(best_deck, decks_curr);
+			
+			cout << "Found Better Deck" << endl;
+			cout << best_deck.front()->value << endl;
+			cout << best_deck.back()->value << endl;
+
+			decks_curr = randomize(cards, nbDecks);
+		}
+		else
+			cout << "improved";
         
     }
 
