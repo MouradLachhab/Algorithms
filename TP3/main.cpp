@@ -96,6 +96,7 @@ vector<Deck*> createDecksGreedy(vector<Card*> cards, int nbDecks)
         Card* currentCard = cards[availableCards.back()];
         availableCards.pop_back();
 
+        int bestBump = 0;
         int bestValue = -9999;
         int deckIndex = -1;
 
@@ -110,8 +111,11 @@ vector<Deck*> createDecksGreedy(vector<Card*> cards, int nbDecks)
                     deckValue += decks[i]->cards[j]->synergy[currentCard->id];
                 }
 
-                if (deckValue > bestValue)
+                int currentBump = deckValue - decks[i]->value;
+
+                if (currentBump > bestBump || deckIndex == -1)
                 {
+                    bestBump = currentBump;
                     bestValue = deckValue;
                     deckIndex = i;
                 }
@@ -138,6 +142,37 @@ vector<Card*> createCards(vector<int> cardValues, vector<vector<int>> synergies)
     }
 
     return cards;
+}
+
+void testDeck(vector<Card*> cards)
+{
+    int cardsUsed[10] = {89, 99, 66, 61, 54, 34, 23, 7, 6, 5};
+
+    Deck deck;
+
+    for (int i = 0; i < 10; ++i)
+    {
+        deck.cards.push_back(cards[cardsUsed[i]]);
+    }
+
+    int deckvalue = 0;
+
+    for (int i = 0; i < deck.cards.size(); ++i)
+    {
+        deckvalue += deck.cards[i]->value;
+        
+        cout << deck.cards[i]->value << " : ";
+
+        for (int j = i + 1; j < deck.cards.size(); ++j)
+        {
+            deckvalue += deck.cards[i]->synergy[deck.cards[j]->id];
+            cout << deck.cards[i]->synergy[deck.cards[j]->id] << " ";
+        }
+
+        cout << endl;   
+    }
+
+    cout << "HAHAHAH: " << deckvalue << endl;
 }
 
 int getMinValue(vector<Deck*> decks)
@@ -219,6 +254,8 @@ int main(int argc, char **argv)
 
 	int current_min = -9999;
 
+    testDeck(cards);
+
     while(1)
     {
 		decks_curr = createDecksGreedy(cards, nbDecks);
@@ -232,7 +269,7 @@ int main(int argc, char **argv)
             {
                 for (int j = 0; j < decks_curr[i]->cards.size(); ++j)
                 {
-                    cout << decks_curr[i]->cards[j]->value << " ";
+                    cout << decks_curr[i]->cards[j]->id << " ";
                 }
 
                 cout << "Deck Value: "<< decks_curr[i]->value << endl;
