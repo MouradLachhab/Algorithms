@@ -71,32 +71,28 @@ struct Permutation
 
 bool improve(vector<Deck*> decks_curr)
 {
-    // Copy ???
-    vector<Deck*> decks_temp = decks_curr;
+    Deck worst_deck = decks_temp.back();
 
-    for(int i = decks_curr.size() - 1; i > 0; --i)
+    for(int i = worst_deck.size() - 1; i > worst_deck.size()/2; --i)
     {
-        Card* card1 = decks_temp[i]->cards.back();
-        Card* card2 = decks_temp[i-1]->cards.back();
+    	Card* card1 = worst_deck->cards[i];
 
-        Permutation perm(card1, card2);
-
-        // if(perm is in tabo_perm )
-        // get another worst
+  		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
+  		{
+        Card* card2 = decks_temp[j]->cards.front();
+        int max_value = worst_deck->value + decks_curr[j]->value;
 
         swap(card1, card2);
 
-        decks_temp[i]->setValue();
-        decks_temp[i-1]->setValue();
+        worst_deck->setValue();
+        decks_temp[j]->setValue();
 
-        if (decks_temp[i]->value + decks_temp[i-1]->value >
-            decks_curr[i]->value + decks_curr[i-1]->value )
-        {
-            decks_curr = decks_temp;
+        if (worst_deck->value + decks_curr[j]->value > max_value )
             return true;
+        else
+        	swap(card2, card1);
         }
     }
-
     return false;
 }
 
