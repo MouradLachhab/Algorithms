@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
-#include <bits/stdc++.h> 
+#include <algorithm> 
 #include <time.h>
 
 using namespace std;
@@ -71,21 +71,21 @@ struct Permutation
 
 bool improve(vector<Deck*> decks_curr)
 {
-    Deck worst_deck = decks_temp.back();
+    Deck* worst_deck = decks_curr.back();
 
-    for(int i = worst_deck.size() - 1; i > worst_deck.size()/2; --i)
+    for(int i = worst_deck->cards.size() - 1; i > worst_deck->cards.size()/2; --i)
     {
     	Card* card1 = worst_deck->cards[i];
 
   		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
   		{
-        Card* card2 = decks_temp[j]->cards.front();
-        int max_value = worst_deck->value + decks_curr[j]->value;
+        Card* card2 = decks_curr[j]->cards.front();
 
+        int max_value = worst_deck->value + decks_curr[j]->value;
         swap(card1, card2);
 
         worst_deck->setValue();
-        decks_temp[j]->setValue();
+		decks_curr[j]->setValue();
 
         if (worst_deck->value + decks_curr[j]->value > max_value )
             return true;
@@ -172,6 +172,7 @@ int main(int argc, char **argv)
     }
 
     int nbCards, nbDecks;
+	path = "C:/Users/Elisabeth/Documents/Algoo/INF8775/TP3/exemplaires/MTG_10_10";
     ifstream infile(path);
     string line;
 
