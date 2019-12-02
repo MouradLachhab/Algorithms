@@ -26,7 +26,7 @@ struct Card
 struct Deck
 {
     vector<Card*> cards;
-    int value;
+    int value = 0;
 
     void setValue()
     {
@@ -69,76 +69,7 @@ struct Permutation
     }
 };
 
-bool improve(vector<Deck*> decks_curr)
-{
-    // Copy ???
-    vector<Deck*> decks_temp = decks_curr;
-
-    for(int i = decks_curr.size() - 1; i > 0; --i)
-    {
-        Card* card1 = decks_temp[i]->cards.back();
-        Card* card2 = decks_temp[i-1]->cards.back();
-
-        Permutation perm(card1, card2);
-
-        // if(perm is in tabo_perm )
-        // get another worst
-
-        swap(card1, card2);
-
-        decks_temp[i]->setValue();
-        decks_temp[i-1]->setValue();
-
-        if (decks_temp[i]->value + decks_temp[i-1]->value >
-            decks_curr[i]->value + decks_curr[i-1]->value )
-        {
-            decks_curr = decks_temp;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-vector<Deck*> getBestMinDeck(vector<Deck*> decks1, vector<Deck*> decks2)
-{
-    sort(decks1.begin(), decks1.end());
-    sort(decks2.begin(), decks2.end());
-
-    if(decks1.back()->value > decks2.back()->value)
-        return decks1;
-
-    return decks2;
-}
-
-vector<Deck*> randomize(vector<Card*> cards, int nbDecks)
-{
-    int nbCardsPerDeck = cards.size() / nbDecks;
-    vector<Deck*> decks(nbDecks);
-    vector<int> availableDecks(nbDecks);
-
-    for (int i = 0; i < nbDecks; ++i)
-    {
-        decks[i] = new Deck();
-        availableDecks[i] = i;
-    }
-
-    for (int i = 0; i < cards.size(); ++i)
-    {
-        int index = rand() %  availableDecks.size();
-        int deck = availableDecks[index];
-        decks[deck]->cards.push_back(cards[i]);
-
-        if (decks[deck]->cards.size() == nbCardsPerDeck)
-        {
-            availableDecks.erase(availableDecks.begin() + index);
-        }
-    }
-
-    return decks;
-}
-
-vector<Deck*> improvedRandomizer(vector<Card*> cards, int nbDecks)
+vector<Deck*> createDecksGreedy(vector<Card*> cards, int nbDecks)
 {
 	int nbCardsPerDeck = cards.size() / nbDecks;
 	vector<Deck*> decks(nbDecks);
@@ -154,33 +85,41 @@ vector<Deck*> improvedRandomizer(vector<Card*> cards, int nbDecks)
 		decks[i] = new Deck();
 		int index = rand() % availableCards.size();
 		decks[i]->cards.push_back(cards[availableCards[index]]);
+        decks[i]->value += cards[availableCards[index]]->value;
 		availableCards.erase(availableCards.begin() + index);
 	}
 
 	bool done = false;
 	int tooManyLoops = 0;
-	while (!done)
+	while (!availableCards.empty())
 	{
-		done = true;
+        Card* currentCard = cards[availableCards.back()];
+        availableCards.pop_back();
+
+        int bestValue = -9999;
+        int deckIndex = -1;
 
 		for (int i = 0; i < nbDecks; ++i)
 		{
-			if (decks[i]->cards.size() < nbCardsPerDeck)
-			{
-				done = false;
-				int index = rand() % availableCards.size();
+            if (decks[i]->cards.size() < nbCardsPerDeck)
+            {
+                int deckValue = decks[i]->value + currentCard->value;
 
-				if (decks[i]->cards[0]->synergy[availableCards[index]] > 0 || tooManyLoops > nbCardsPerDeck)
-				{
-					decks[i]->cards.push_back(cards[availableCards[index]]);
-					availableCards.erase(availableCards.begin() + index);
-				}
-				else
-				{
-					tooManyLoops++;
-				}
-			}
+                for (int j = 0; j < decks[i]->cards.size(); ++j)
+                {
+                    deckValue += decks[i]->cards[j]->synergy[currentCard->id];
+                }
+
+                if (deckValue > bestValue)
+                {
+                    bestValue = deckValue;
+                    deckIndex = i;
+                }
+            }
 		}
+
+        decks[deckIndex]->cards.push_back(currentCard);
+        decks[deckIndex]->value = bestValue;
 	}
 
 	return decks;
@@ -237,7 +176,6 @@ int main(int argc, char **argv)
     int nbCards, nbDecks;
 
 	// TODO: Remove path
-	path = "C:/Users/MMoumouton/source/repos/Project2/Debug/exemplaires/MTG_10_10";
 
     ifstream infile(path);
 
@@ -279,24 +217,26 @@ int main(int argc, char **argv)
     vector<Card*> cards = createCards(cardValues, synergies);
     srand(time(NULL));
 
-    decks_curr = improvedRandomizer(cards, nbDecks);
 	int current_min = -9999;
-    
-    for(Deck* deck : decks_curr)
-        deck->setValue();
 
     while(1)
     {
-		decks_curr = improvedRandomizer(cards, nbDecks);
-
-		for (Deck* deck : decks_curr)
-			deck->setValue();
+		decks_curr = createDecksGreedy(cards, nbDecks);
 
 		int newMin = getMinValue(decks_curr);
 
 		if (current_min < newMin)
 		{ 
 			cout << "New min: " << newMin << endl;
+            for (int i = 0; i < decks_curr.size(); ++i)
+            {
+                for (int j = 0; j < decks_curr[i]->cards.size(); ++j)
+                {
+                    cout << decks_curr[i]->cards[j]->value << " ";
+                }
+
+                cout << "Deck Value: "<< decks_curr[i]->value << endl;
+            }
 			current_min = newMin;
 			best_deck = decks_curr;
 		}
