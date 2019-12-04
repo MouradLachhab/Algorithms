@@ -8,8 +8,6 @@
 #include <algorithm> 
 #include <time.h>
 
-#define NB_ITERATIONS 10000
-
 using namespace std;
 
 struct Card
@@ -51,9 +49,14 @@ struct Deck
     }
 };
 
+bool compareDeck(Deck& first, Deck& second)
+{
+	return first.value > second.value;
+}
+
 int getMinValue(vector<Deck>& decks)
 {
-	int  min = 99999999;
+	int  min = 99999;
 	for (Deck deck : decks)
 	{
 		if (deck.value < min)
@@ -62,23 +65,6 @@ int getMinValue(vector<Deck>& decks)
 
 	return min;
 }
-
-bool compareDeck(Deck& first, Deck& second)
-{
-	return first.value > second.value;
-}
-
-struct Permutation
-{
-    Card* cards[2];
-    int age;
-
-    Permutation(Card* card1, Card* card2)
-    {
-        cards[0] = card1;
-        cards[1] = card2;
-    }
-};
 
 bool improve(vector<Deck>& decks_curr)
 {
@@ -95,7 +81,6 @@ bool improve(vector<Deck>& decks_curr)
 			for (int k = deck_size -1 ; k > 0 ; --k)
 			{
 				Card* card_temp = decks_curr[j].cards[k];
-				
 
 				decks_curr[j].cards.at(k) = worst_deck->cards[i];
 				worst_deck->cards.at(i) = card_temp;
@@ -114,17 +99,6 @@ bool improve(vector<Deck>& decks_curr)
         }
     }
     return false;
-}
-
-vector<Deck> getBestMinDeck(vector<Deck> decks1, vector<Deck> decks2)
-{
-    sort(decks1.begin(), decks1.end(),compareDeck);
-    sort(decks2.begin(), decks2.end(),compareDeck);
-
-    if(decks1.back().value >= decks2.back().value)
-        return decks1;
-
-    return decks2;
 }
 
 vector<Deck> createDecksGreedy(vector<Card*> cards, int nbDecks)
@@ -215,6 +189,8 @@ void printBestSolution(vector<Deck>& decks, int value, bool showBestSolution)
 
 int main(int argc, char **argv)
 {
+    srand(time(NULL));
+
     string path;
     bool showNewBest = false;
 
@@ -233,7 +209,7 @@ int main(int argc, char **argv)
         }
         
     }
-	path = "C:/Users/Elisabeth/Documents/Algoo/INF8775/TP3/exemplaires/MTG_10_10";
+
     int nbCards, nbDecks;
     ifstream infile(path);
     string line;
@@ -262,40 +238,48 @@ int main(int argc, char **argv)
         synergies.push_back(vector<int>(istream_iterator<int>(iss), istream_iterator<int>()));
     }
 
-	int currentMin = -9999;
-    vector<Deck> best_decks;
     vector<Card*> cards = createCards(cardValues, synergies);
-    srand(time(NULL));
 
-	int k = 0;
+    vector<Deck> best_decks;
+	int allTimeMin = -9999;
+	int currentMin = -9999;
+	int staleLoop = 0;
+
+	bool generatingNew = true;
+
     while(1)
     {
-		++k;
-		if (k == NB_ITERATIONS)
-		{
-			//cout << "Switching to improving" << endl;
-			sort(best_decks.begin(), best_decks.end(), compareDeck);
-		}
-		if (k < NB_ITERATIONS)
+		if (generatingNew)
 		{
 			vector<Deck> decks_curr = createDecksGreedy(cards, nbDecks);
 			int newMin = getMinValue(decks_curr);
-			// bool IsBetter = improve(decks_curr);
 
 			if (currentMin < newMin)
 			{
-				// cout << "CURRENT ITERATION: " << k << endl << "CURRENT MIN :" << newMin << endl;
 				currentMin = newMin;
 				best_decks = decks_curr;
 
-				printBestSolution(best_decks, currentMin, showNewBest);
+				if (currentMin > allTimeMin)
+				{
+					allTimeMin = currentMin;
+					printBestSolution(best_decks, currentMin, showNewBest);
+				}
+			}
+			else
+			{
+				staleLoop++;
+
+				if (staleLoop > 10000)
+				{
+					generatingNew = false;
+					staleLoop = 0;
+				}
 			}
 		}
 		else
 		{
-			
-			bool IsBetter = improve(best_decks);
 			sort(best_decks.begin(), best_decks.end(), compareDeck);
+			bool IsBetter = improve(best_decks);
 
 			if (IsBetter)
 			{
@@ -303,7 +287,22 @@ int main(int argc, char **argv)
 				if (newMin > currentMin)
 				{
 					currentMin = newMin;
-					printBestSolution(best_decks, newMin, showNewBest);
+
+					if (currentMin > allTimeMin)
+					{
+						allTimeMin = currentMin;
+						printBestSolution(best_decks, newMin, showNewBest);
+					}
+				}
+			}	
+			else
+			{
+				staleLoop++;
+
+				if (staleLoop > nbCards)
+				{
+					currentMin = -9999;
+					generatingNew = true; 
 				}
 			}
 		}
