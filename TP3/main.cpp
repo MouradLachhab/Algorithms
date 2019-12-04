@@ -83,19 +83,20 @@ struct Permutation
 bool improve(vector<Deck>& decks_curr)
 {
     Deck* worst_deck = &decks_curr.back();
+	int max_value_of_worst = worst_deck->value;
 	int deck_size = worst_deck->cards.size();
 
-    for(int i = deck_size - 1; i > deck_size /2; --i)
+    for(int i = deck_size - 1; i > deck_size/2 ; --i)
     {
 		sort(worst_deck->cards.begin(), worst_deck->cards.end(), compareCard);
 
-  		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
+  		for(int j = 0; j < decks_curr.size(); ++j)
   		{
 			sort(decks_curr[j].cards.begin(), decks_curr[j].cards.end(), compareCard);
-			for (int k = deck_size - 1; k > 0  ; --k)
+			for (int k = deck_size -1 ; k > 0 ; --k)
 			{
 				Card* card_temp = decks_curr[j].cards[k];
-				int max_value = worst_deck->value + decks_curr[j].value;
+				
 
 				decks_curr[j].cards.at(k) = worst_deck->cards[i];
 				worst_deck->cards.at(i) = card_temp;
@@ -103,7 +104,7 @@ bool improve(vector<Deck>& decks_curr)
 				worst_deck->setValue();
 				decks_curr[j].setValue();
 
-				if (worst_deck->value + decks_curr[j].value > max_value)
+				if (worst_deck->value > max_value_of_worst && decks_curr[j].value > max_value_of_worst)
 					return true;
 
 				worst_deck->cards.at(i) = decks_curr[j].cards[k];
@@ -294,6 +295,7 @@ int main(int argc, char **argv)
 		else
 		{
 			bool IsBetter = improve(best_decks);
+			sort(best_decks.begin(), best_decks.end(), compareDeck);
 
 			if (IsBetter)
 			{
