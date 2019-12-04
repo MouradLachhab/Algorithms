@@ -8,6 +8,8 @@
 #include <algorithm> 
 #include <time.h>
 
+#define NB_ITERATIONS 100000
+
 using namespace std;
 
 struct Card
@@ -193,6 +195,24 @@ vector<Card*> createCards(vector<int> cardValues, vector<vector<int>> synergies)
     return cards;
 }
 
+void printBestSolution(vector<Deck>& decks, int value, bool showBestSolution)
+{
+	if (!showBestSolution)
+	{
+		cout << value << endl;
+	}
+	else
+	{
+		for (int i = 0; i < decks.size(); ++i)
+		{
+			for (int j = 0; j < decks[i].cards.size(); ++j)
+			{
+				cout << decks[i].cards[j]->id << " ";
+			}
+			cout << endl;
+		}
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -216,7 +236,6 @@ int main(int argc, char **argv)
     }
 
     int nbCards, nbDecks;
-	path = "E:/INF8775/TP3/exemplaires/MTG_10_10";
     ifstream infile(path);
     string line;
 
@@ -248,16 +267,17 @@ int main(int argc, char **argv)
     vector<Deck> best_decks;
     vector<Card*> cards = createCards(cardValues, synergies);
     srand(time(NULL));
+
 	int k = 0;
     while(1)
     {
 		++k;
-		if (k == 100)
+		if (k == NB_ITERATIONS)
 		{
 			//cout << "Switching to improving" << endl;
 			sort(best_decks.begin(), best_decks.end(), compareDeck);
 		}
-		if (k < 100)
+		if (k < NB_ITERATIONS)
 		{
 			vector<Deck> decks_curr = createDecksGreedy(cards, nbDecks);
 			int newMin = getMinValue(decks_curr);
@@ -265,19 +285,11 @@ int main(int argc, char **argv)
 
 			if (currentMin < newMin)
 			{
-				for (int i = 0; i < decks_curr.size(); ++i)
-				{
-					for (int j = 0; j < decks_curr[i].cards.size(); ++j)
-					{
-						cout << decks_curr[i].cards[j]->id << " ";
-					}
-					cout << endl;
-					// cout << " DeckValue: " << decks_curr[i].value << endl;
-				}
-
 				// cout << "CURRENT ITERATION: " << k << endl << "CURRENT MIN :" << newMin << endl;
 				currentMin = newMin;
 				best_decks = decks_curr;
+
+				printBestSolution(best_decks, currentMin, showNewBest);
 			}
 		}
 		else
@@ -286,15 +298,8 @@ int main(int argc, char **argv)
 
 			if (IsBetter)
 			{
-				for (int i = 0; i < best_decks.size(); ++i)
-				{
-					for (int j = 0; j < best_decks[i].cards.size(); ++j)
-					{
-						cout << best_decks[i].cards[j]->id << " ";
-					}
-					cout << endl;
-					// cout << " DeckValue: " << decks_curr[i].value << endl;
-				}
+				int newMin = getMinValue(best_decks);
+				printBestSolution(best_decks, newMin, showNewBest);
 			}
 		}
     }
