@@ -299,7 +299,11 @@ int main(int argc, char **argv)
 			if (IsBetter)
 			{
 				int newMin = getMinValue(best_decks);
-				printBestSolution(best_decks, newMin, showNewBest);
+				if (newMin > currentMin)
+				{
+					currentMin = newMin;
+					printBestSolution(best_decks, newMin, showNewBest);
+				}
 			}
 		}
     }
