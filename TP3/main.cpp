@@ -8,7 +8,7 @@
 #include <algorithm> 
 #include <time.h>
 
-#define NB_ITERATIONS 100000
+#define NB_ITERATIONS 10000
 
 using namespace std;
 
@@ -39,16 +39,15 @@ struct Deck
 			value += cards[i]->value;
 			cards[i]->value_with_synergy = cards[i]->value;
 
-			for (int j = 0; j < i - 1; ++j)
+			for (int j = 0; j < i ; ++j)
 			{
 				value += cards[j]->synergy[cards[i]->id];
 
-				cards[j]->value_with_synergy += cards[i]->synergy[cards[j]->id];
-				cards[i]->value_with_synergy += cards[j]->synergy[cards[i]->id];
+				cards[j]->value_with_synergy += cards[j]->synergy[cards[i]->id]/2;
+				cards[i]->value_with_synergy += cards[i]->synergy[cards[j]->id]/2;
 			}
 		}
 
-        sort(cards.begin(), cards.end(),compareCard);
     }
 };
 
@@ -89,18 +88,17 @@ bool improve(vector<Deck>& decks_curr)
     for(int i = deck_size - 1; i > deck_size /2; --i)
     {
 		sort(worst_deck->cards.begin(), worst_deck->cards.end(), compareCard);
-    	Card* card1 = worst_deck->cards[i];
 
   		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
   		{
-			for (int k = 0; k < deck_size ; ++k)
+			sort(decks_curr[j].cards.begin(), decks_curr[j].cards.end(), compareCard);
+			for (int k = deck_size - 1; k > 0  ; --k)
 			{
-				Card* card2 = decks_curr[j].cards[k];
-				worst_deck->setValue();
-				decks_curr[j].setValue();
-
+				Card* card_temp = decks_curr[j].cards[k];
 				int max_value = worst_deck->value + decks_curr[j].value;
-				swap(card1, card2);
+
+				decks_curr[j].cards.at(k) = worst_deck->cards[i];
+				worst_deck->cards.at(i) = card_temp;
 
 				worst_deck->setValue();
 				decks_curr[j].setValue();
@@ -108,7 +106,8 @@ bool improve(vector<Deck>& decks_curr)
 				if (worst_deck->value + decks_curr[j].value > max_value)
 					return true;
 
-				swap(card2, card1);
+				worst_deck->cards.at(i) = decks_curr[j].cards[k];
+				decks_curr[j].cards.at(k) = card_temp;
 				worst_deck->setValue();
 				decks_curr[j].setValue();
 			}
@@ -234,7 +233,7 @@ int main(int argc, char **argv)
         }
         
     }
-
+	path = "C:/Users/Elisabeth/Documents/Algoo/INF8775/TP3/exemplaires/MTG_10_10";
     int nbCards, nbDecks;
     ifstream infile(path);
     string line;
