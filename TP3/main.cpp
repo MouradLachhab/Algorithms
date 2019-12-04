@@ -85,12 +85,11 @@ bool improve(vector<Deck>& decks_curr)
     Deck* worst_deck = &decks_curr.back();
 	int max_value_of_worst = worst_deck->value;
 	int deck_size = worst_deck->cards.size();
+	sort(worst_deck->cards.begin(), worst_deck->cards.end(), compareCard);
 
-    for(int i = deck_size - 1; i > deck_size/2 ; --i)
-    {
-		sort(worst_deck->cards.begin(), worst_deck->cards.end(), compareCard);
-
-  		for(int j = 0; j < decks_curr.size(); ++j)
+    for(int i = deck_size - 1; i > 0; --i)
+	{
+  		for(int j = 1; j < decks_curr.size(); ++j)
   		{
 			sort(decks_curr[j].cards.begin(), decks_curr[j].cards.end(), compareCard);
 			for (int k = deck_size -1 ; k > 0 ; --k)
@@ -294,6 +293,7 @@ int main(int argc, char **argv)
 		}
 		else
 		{
+			
 			bool IsBetter = improve(best_decks);
 			sort(best_decks.begin(), best_decks.end(), compareDeck);
 
