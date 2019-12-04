@@ -18,13 +18,11 @@ struct Card
     int value_with_synergy; 
 };
 
-
-bool compareCard(Card* first, Card* second) {
-	if (first->value_with_synergy > second->value_with_synergy)
-		return true;
-	else
-		return false;
+bool compareCard(Card* first, Card* second)
+{
+	return first->value_with_synergy > second->value_with_synergy;
 }
+
 struct Deck
 {
     vector<Card*> cards;
@@ -32,34 +30,43 @@ struct Deck
 
     void setValue()
     {
-        int value_deck = 0;
-        int value_card = 0;
+		value = 0;
 
-        for(Card* card : cards)
-        {
-            value_deck += card->value;
-            value_card = card->value;
-            
-            for(Card* card2 : cards)
-            {
-                value_deck += card->synergy[card2->id]/2;
-                value_card += card->synergy[card2->id]/2;
-            }
+		for (int i = 0; i < cards.size(); ++i)
+		{
+			value += cards[i]->value;
+			cards[i]->value_with_synergy = cards[i]->value;
 
-            card->value_with_synergy = value_card;
-        }
-        
-        value = value_deck;
+			for (int j = 0; j < i - 1; ++j)
+			{
+				value += cards[j]->synergy[cards[i]->id];
+
+				cards[j]->value_with_synergy += cards[i]->synergy[cards[j]->id];
+				cards[i]->value_with_synergy += cards[j]->synergy[cards[i]->id];
+			}
+		}
+
         sort(cards.begin(), cards.end(),compareCard);
     }
 };
 
-bool compareDeck(Deck* first, Deck* second) {
-	if (first->value > second->value)
-		return true;
-	else
-		return false;
+int getMinValue(vector<Deck>& decks)
+{
+	int  min = 99999999;
+	for (Deck deck : decks)
+	{
+		if (deck.value < min)
+			min = deck.value;
+	}
+
+	return min;
 }
+
+bool compareDeck(Deck& first, Deck& second)
+{
+	return first.value > second.value;
+}
+
 struct Permutation
 {
     Card* cards[2];
@@ -72,76 +79,103 @@ struct Permutation
     }
 };
 
-bool improve(vector<Deck*> decks_curr)
+bool improve(vector<Deck>& decks_curr)
 {
-    Deck* worst_deck = decks_curr.back();
+    Deck* worst_deck = &decks_curr.back();
 	int deck_size = worst_deck->cards.size();
 
     for(int i = deck_size - 1; i > deck_size /2; --i)
     {
+		sort(worst_deck->cards.begin(), worst_deck->cards.end(), compareCard);
     	Card* card1 = worst_deck->cards[i];
 
   		for(int j = decks_curr.size() - 2; j > decks_curr.size()/2; --j)
   		{
-			for (int k = 0; k <deck_size ; ++k)
+			for (int k = 0; k < deck_size ; ++k)
 			{
-				Card* card2 = decks_curr[j]->cards[k];
+				Card* card2 = decks_curr[j].cards[k];
+				worst_deck->setValue();
+				decks_curr[j].setValue();
 
-				int max_value = worst_deck->value + decks_curr[j]->value;
+				int max_value = worst_deck->value + decks_curr[j].value;
 				swap(card1, card2);
 
 				worst_deck->setValue();
-				decks_curr[j]->setValue();
+				decks_curr[j].setValue();
 
-				if (worst_deck->value + decks_curr[j]->value > max_value)
+				if (worst_deck->value + decks_curr[j].value > max_value)
 					return true;
 
 				swap(card2, card1);
 				worst_deck->setValue();
-				decks_curr[j]->setValue();
+				decks_curr[j].setValue();
 			}
-       
         }
     }
     return false;
 }
 
-vector<Deck*> getBestMinDeck(vector<Deck*> decks1, vector<Deck*> decks2)
+vector<Deck> getBestMinDeck(vector<Deck> decks1, vector<Deck> decks2)
 {
     sort(decks1.begin(), decks1.end(),compareDeck);
     sort(decks2.begin(), decks2.end(),compareDeck);
 
-    if(decks1.back()->value >= decks2.back()->value)
+    if(decks1.back().value >= decks2.back().value)
         return decks1;
 
     return decks2;
 }
 
-vector<Deck*> randomize(vector<Card*> cards, int nbDecks)
+vector<Deck> createDecksGreedy(vector<Card*> cards, int nbDecks)
 {
-    int nbCardsPerDeck = cards.size() / nbDecks;
-    vector<Deck*> decks(nbDecks);
-    vector<int> availableDecks(nbDecks);
+	int nbCardsPerDeck = cards.size() / nbDecks;
+	vector<Deck> decks(nbDecks);
 
-    for (int i = 0; i < nbDecks; ++i)
-    {
-        decks[i] = new Deck();
-        availableDecks[i] = i;
-    }
+	for (int i = 0; i < nbDecks; ++i)
+	{
+		int index = rand() % cards.size();
+		decks[i].cards.push_back(cards[index]);
+		decks[i].value += cards[index]->value;
+		cards.erase(cards.begin() + index);
+	}
 
-    for (int i = 0; i < cards.size(); ++i)
-    {
-        int index = rand() %  availableDecks.size();
-        int deck = availableDecks[index];
-        decks[deck]->cards.push_back(cards[i]);
+	while (!cards.empty())
+	{
+		int index = rand() % cards.size();
+		Card* currentCard = cards[index];
+		cards.erase(cards.begin() + index);
 
-        if (decks[deck]->cards.size() == nbCardsPerDeck)
-        {
-            availableDecks.erase(availableDecks.begin() + index);
-        }
-    }
+		int bestBump = -9999;
+		int bestValue = -9999;
+		int deckIndex = -1;
 
-    return decks;
+		for (int i = 0; i < nbDecks; ++i)
+		{
+			if (decks[i].cards.size() < nbCardsPerDeck)
+			{
+				int deckValue = decks[i].value + currentCard->value;
+
+				for (int j = 0; j < decks[i].cards.size(); ++j)
+				{
+					deckValue += decks[i].cards[j]->synergy[currentCard->id];
+				}
+
+				int currentBump = deckValue - decks[i].value;
+
+				if (currentBump > bestBump)
+				{
+					bestBump = currentBump;
+					bestValue = deckValue;
+					deckIndex = i;
+				}
+			}
+		}
+
+		decks[deckIndex].cards.push_back(currentCard);
+		decks[deckIndex].value = bestValue;
+	}
+
+	return decks;
 }
 
 vector<Card*> createCards(vector<int> cardValues, vector<vector<int>> synergies)
@@ -182,7 +216,7 @@ int main(int argc, char **argv)
     }
 
     int nbCards, nbDecks;
-	path = "C:/Users/Elisabeth/Documents/Algoo/INF8775/TP3/exemplaires/MTG_10_10";
+	path = "E:/INF8775/TP3/exemplaires/MTG_10_10";
     ifstream infile(path);
     string line;
 
@@ -210,49 +244,65 @@ int main(int argc, char **argv)
         synergies.push_back(vector<int>(istream_iterator<int>(iss), istream_iterator<int>()));
     }
 
-    vector<Permutation*> tabu_permutation;
-    vector<Deck*> decks_curr;
-    vector<Deck*> best_deck;
+	int currentMin = -9999;
+    vector<Deck> best_decks;
     vector<Card*> cards = createCards(cardValues, synergies);
     srand(time(NULL));
-
-    decks_curr = randomize(cards, nbDecks);
-    best_deck = decks_curr;
-    
-    for(Deck* deck : decks_curr)
-        deck->setValue();
-
+	int k = 0;
     while(1)
     {
-        bool IsBetter = improve(decks_curr);
-
-		if (!IsBetter)
+		++k;
+		if (k == 100)
 		{
-			best_deck = getBestMinDeck(best_deck, decks_curr);
-			
-			cout << "Found Better Deck" << endl;
-			cout << best_deck.front()->value << endl;
-			cout << best_deck.back()->value << endl;
+			//cout << "Switching to improving" << endl;
+			sort(best_decks.begin(), best_decks.end(), compareDeck);
+		}
+		if (k < 100)
+		{
+			vector<Deck> decks_curr = createDecksGreedy(cards, nbDecks);
+			int newMin = getMinValue(decks_curr);
+			// bool IsBetter = improve(decks_curr);
 
-			decks_curr = randomize(cards, nbDecks);
+			if (currentMin < newMin)
+			{
+				for (int i = 0; i < decks_curr.size(); ++i)
+				{
+					for (int j = 0; j < decks_curr[i].cards.size(); ++j)
+					{
+						cout << decks_curr[i].cards[j]->id << " ";
+					}
+					cout << endl;
+					// cout << " DeckValue: " << decks_curr[i].value << endl;
+				}
+
+				// cout << "CURRENT ITERATION: " << k << endl << "CURRENT MIN :" << newMin << endl;
+				currentMin = newMin;
+				best_decks = decks_curr;
+			}
 		}
 		else
-			cout << "improved";
-        
+		{
+			bool IsBetter = improve(best_decks);
+
+			if (IsBetter)
+			{
+				for (int i = 0; i < best_decks.size(); ++i)
+				{
+					for (int j = 0; j < best_decks[i].cards.size(); ++j)
+					{
+						cout << best_decks[i].cards[j]->id << " ";
+					}
+					cout << endl;
+					// cout << " DeckValue: " << decks_curr[i].value << endl;
+				}
+			}
+		}
     }
 
-   for (auto p : best_deck)
-   {
-     delete p;
-   }
-    for (auto p : decks_curr)
-   {
-     delete p;
-   }
-    for (auto p : cards)
-   {
-     delete p;
-   }
+    for (Card* card : cards)
+	{
+		delete card;
+	}
 
    
 	return 0;
